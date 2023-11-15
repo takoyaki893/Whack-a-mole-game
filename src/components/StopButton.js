@@ -1,7 +1,8 @@
-import { StopButtonContainer } from '../styles/styledComponents';
+import { memo } from "react";
+import { StopButtonBody } from "../styles/styledComponents";
 
-const StopButton = ({ gameStop }) => {
-  return <StopButtonContainer onClick={gameStop}>reset</StopButtonContainer>;
-}
+const StopButton = memo(({ gameStop }) => {
+  return <StopButtonBody onClick={gameStop}>やめる</StopButtonBody>;
+})
 
 export default StopButton;

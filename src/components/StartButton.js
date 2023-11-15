@@ -1,7 +1,8 @@
-import { StartButtonContainer } from '../styles/styledComponents';
+import { memo } from "react";
+import { StartButtonBody } from "../styles/styledComponents";
 
-const StartButton = ({ gameStart }) => {
-  return <StartButtonContainer onClick={gameStart}>start</StartButtonContainer>;
-}
+const StartButton = memo(({ gameStart }) => {
+  return <StartButtonBody onClick={gameStart}>開始</StartButtonBody>;
+})
 
 export default StartButton;

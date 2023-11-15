@@ -1,42 +1,36 @@
-import { useState, useEffect } from 'react';
-import ScoreDisplay from './ScoreDisplay';
-import Grid from './Grid';
+import { useState, useEffect, useCallback } from 'react';
+import Score from './Score';
+import Maincontents from './MainContents';
 import StartButton from './StartButton';
 import StopButton from './StopButton';
-import TimeLimitDisplay from './TimeLimitDisplay';
-import { DisplayContainer } from '../styles/styledComponents';
+import TimeLimit from './TimeLimit';
+import { ButtonWrapper, DisplayWrapper, GridContainer, DisplayOutlet } from '../styles/styledComponents';
 
 /**
- * ・git連携
  * ・スコアの保存
  * ・ランキング機能
+ * ・ゲーム終了時にスコアについてのモーダルなダイアログを出す
+ * ・モグラのアニメーション設定
  */
 
+const GRID_ROW = 3;
+const GRID_COLUMN = 3;
+const STATUS_STOP = 'STOP'
+const STATUS_START = 'START'
+const MOLE_NUMBER = 5;
+const MOLE_SCORE = 3;
+const DEFAULT_SCORE = 0;
+const TIME_LIMIT = 30;
+const DEFAULT_HIT_COUNT = 0;
+
+const defaultHolesState = Array.from({ length: GRID_ROW * GRID_COLUMN }, (_, id) => ({ id, mole: false }));
+
 const GameControl = () => {
-
-    const GRID_ROW = 3;
-    const GRID_COLUMN = 3;
-    const STATUS_STOP = 'STOP'
-    const STATUS_START = 'START'
-    const MOLE_NUMBER = 3;
-    const MOLE_SCORE = 3;
-    const DEFAULT_SCORE = 0;
-    const TIME_LIMIT = 10;
-
-    const defaultHolesState = [];
-
-    for (let id = 0; id < GRID_ROW * GRID_COLUMN; id++){
-        defaultHolesState.push(
-            {
-                id: id,
-                mole: false
-            }
-        );
-    }
 
     const [holesState, setHolesState] = useState(defaultHolesState);
     const [gameStatus, setGameStatus] = useState(STATUS_STOP);
     const [score, setScore] = useState(DEFAULT_SCORE);
+    const [hitCount, setHitCount] = useState(DEFAULT_HIT_COUNT);
     const [timeLimit, setTimeLimit] = useState(TIME_LIMIT);
 
     useEffect(() => {
@@ -117,30 +111,41 @@ const GameControl = () => {
     /**
      * ゲームを開始する
      */
-    const gameStart = () => {
-        setGameStatus(prev => {
-            if(prev === STATUS_STOP){
-                return STATUS_START;
-            }
-        });
-    };
+    const gameStart = useCallback(() => {
+        setGameStatus(STATUS_START);
+    }, []) 
 
     /**
      * ゲームを中断する
      */
-    const gameStop = () => {
+    const gameStop = useCallback(() => {
+        setHolesState(createDefaultHolesState());
         setGameStatus(STATUS_STOP);
-        setHolesState(defaultHolesState);
+        setHitCount(DEFAULT_HIT_COUNT);
         setScore(DEFAULT_SCORE);
         setTimeLimit(TIME_LIMIT);
-    }
-
+    }, []);
+    
+    /**
+     * 初期状態のgridを生成する
+     * コンポーネント外のdefaultHolesStateとは参照を別にしたいため新しく生成する
+     * コンポーネント内にdefaultHolesStateを定義した場合はuseCallbackの影響で参照が変化しない
+     * @returns 初期状態のgrid
+     */
+    const createDefaultHolesState = () => {
+        return Array.from({ length: GRID_ROW * GRID_COLUMN }, (_, id) => ({
+            id,
+            mole: false,
+        }));
+    };
+        
     /**
      * 
      * @param {*} e クリックされたgrid
      * @returns ゲーム状況の更新を行う
      */
     const updateStatus = (e) => {
+        // クリックされたgridのidを取得
         const targetId = parseInt(e.target.dataset.id);
 
         if(!holesState[targetId].mole){
@@ -154,23 +159,27 @@ const GameControl = () => {
             return newHoleState;
         })
 
+        // Hit数を更新
+        setHitCount(prev => prev + 1);
+
         // スコアの更新
         setScore(prev => prev + MOLE_SCORE);
     }
 
     return (
-        <>
-            <h1 style={{textAlign: 'center'}}>モグラ叩きゲーム</h1>
-            <DisplayContainer>
-                <ScoreDisplay score={score} />
-                <TimeLimitDisplay timeLimit={timeLimit}></TimeLimitDisplay>
-            </DisplayContainer>
-            <Grid holesState={holesState} updateStatus={updateStatus} />
-            <div style={{ textAlign: 'center', paddingTop: '80px' }}>
+        <GridContainer>
+            <DisplayWrapper>
+                <DisplayOutlet>
+                    <Score score={score} hitCount={hitCount}/>
+                    <TimeLimit timeLimit={timeLimit} />
+                </DisplayOutlet>
+            </DisplayWrapper>
+            <Maincontents holesState={holesState} updateStatus={updateStatus} />
+            <ButtonWrapper>
                 <StartButton gameStart={gameStart} />
                 <StopButton gameStop={gameStop} />
-            </div>
-        </>
+            </ButtonWrapper>
+        </GridContainer>
     )
 }
 
